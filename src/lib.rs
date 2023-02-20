@@ -72,7 +72,7 @@ pub use num_traits::{FromPrimitive, Num, One, Signed, ToPrimitive, Zero};
 const LOG2_10: f64 = 3.321928094887362_f64;
 
 static PRECISION:AtomicU64=AtomicU64::new(100);
-static SCALE:AtomicI64=AtomicI64::new(150);
+static SCALE:AtomicI64=AtomicI64::new(100);
 
 
 
@@ -444,7 +444,7 @@ impl BigDecimal {
                 &r.int_val,
                 self.scale - r.scale,
                 max_precision + 1,
-                max_scale
+                0
             );
 
             // half will increase precision on each iteration
@@ -503,7 +503,6 @@ impl BigDecimal {
         };
 
         let max_precision = crate::PRECISION.load(std::sync::atomic::Ordering::Acquire);
-        let max_scale = crate::SCALE.load(std::sync::atomic::Ordering::Acquire);
 
         let three = BigDecimal::from(3);
 
@@ -514,10 +513,10 @@ impl BigDecimal {
                 &sqrd.int_val,
                 self.scale - sqrd.scale,
                 max_precision + 1,
-                max_scale,
+                0,
             );
             let tmp = tmp + r.double();
-            impl_division(tmp.int_val, &three.int_val, tmp.scale - three.scale, max_precision + 1, max_scale)
+            impl_division(tmp.int_val, &three.int_val, tmp.scale - three.scale, max_precision + 1, 0)
         };
 
         // result initial
@@ -1339,7 +1338,7 @@ fn impl_division(mut num: BigInt, den: &BigInt, mut scale: i64, max_precision: u
     // quotient will be 1 digit upon next division
     remainder *= 10;
 
-    while !remainder.is_zero() && precision < max_precision && scale < max_scale {
+    while !remainder.is_zero() && precision < max_precision && (max_scale == 0 || scale < max_scale) {
         let (q, r) = remainder.div_rem(den);
         quotient = quotient * 10 + q;
         remainder = r * 10;
