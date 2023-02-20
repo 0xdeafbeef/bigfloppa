@@ -67,6 +67,7 @@ use num_bigint::{BigInt, ParseBigIntError, Sign, ToBigInt};
 use num_integer::Integer as IntegerTrait;
 pub use num_traits::{FromPrimitive, Num, One, Signed, ToPrimitive, Zero};
 
+#[allow(clippy::approx_constant)]
 const LOG2_10: f64 = 3.321928094887362_f64;
 
 #[macro_use]
@@ -590,19 +591,37 @@ impl BigDecimal {
         if round_digits >= 0 && need_to_round_digits <= 0 {
             return self.clone();
         }
+        match bigint.to_i128() {
+            None => {
+                let mut number = bigint.clone();
+                if number < BigInt::zero() {
+                    number = -number;
+                }
+                for _ in 0..(need_to_round_digits - 1) {
+                    number /= 10;
+                }
+                let digit = number % 10;
 
-        let mut number = bigint.to_i128().unwrap();
-        if number < 0 {
-            number = -number;
-        }
-        for _ in 0..(need_to_round_digits - 1) {
-            number /= 10;
-        }
-        let digit = number % 10;
+                if digit <= BigInt::from(4) {
+                    return self.with_scale(round_digits);
+                }
+            }
+            Some(mut number) => {
+                if number < 0 {
+                    number = -number;
+                }
+                for _ in 0..(need_to_round_digits - 1) {
+                    number /= 10;
+                }
+                let digit = number % 10;
 
-        if digit <= 4 {
-            self.with_scale(round_digits)
-        } else if bigint.is_negative() {
+                if digit <= 4 {
+                    return self.with_scale(round_digits);
+                }
+            }
+        }
+
+        if bigint.is_negative() {
             self.with_scale(round_digits) - BigDecimal::new(BigInt::from(1), round_digits)
         } else {
             self.with_scale(round_digits) + BigDecimal::new(BigInt::from(1), round_digits)
