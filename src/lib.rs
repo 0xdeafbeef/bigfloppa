@@ -30,7 +30,7 @@
 //! # Example
 //!
 //! ```
-//! use bigdecimal::BigDecimal;
+//! use bigfloppa::BigDecimal;
 //! use std::str::FromStr;
 //!
 //! let input = "0.8";
@@ -170,7 +170,7 @@ impl BigDecimal {
     /// # Examples
     ///
     /// ```
-    /// use bigdecimal::{BigDecimal, Zero};
+    /// use bigfloppa::{BigDecimal, Zero};
     ///
     /// assert_eq!(BigDecimal::parse_bytes(b"0", 10).unwrap(), BigDecimal::zero());
     /// assert_eq!(BigDecimal::parse_bytes(b"13", 10).unwrap(), BigDecimal::from(13));
@@ -261,12 +261,12 @@ impl BigDecimal {
     ///
     /// ```
     /// extern crate num_bigint;
-    /// extern crate bigdecimal;
+    /// extern crate bigfloppa;
     /// use std::str::FromStr;
     ///
-    /// assert_eq!(bigdecimal::BigDecimal::from_str("-1").unwrap().sign(), num_bigint::Sign::Minus);
-    /// assert_eq!(bigdecimal::BigDecimal::from_str("0").unwrap().sign(), num_bigint::Sign::NoSign);
-    /// assert_eq!(bigdecimal::BigDecimal::from_str("1").unwrap().sign(), num_bigint::Sign::Plus);
+    /// assert_eq!(bigfloppa::BigDecimal::from_str("-1").unwrap().sign(), num_bigint::Sign::Minus);
+    /// assert_eq!(bigfloppa::BigDecimal::from_str("0").unwrap().sign(), num_bigint::Sign::NoSign);
+    /// assert_eq!(bigfloppa::BigDecimal::from_str("1").unwrap().sign(), num_bigint::Sign::Plus);
     /// ```
     #[inline]
     pub fn sign(&self) -> num_bigint::Sign {
@@ -280,10 +280,10 @@ impl BigDecimal {
     ///
     /// ```
     /// extern crate num_bigint;
-    /// extern crate bigdecimal;
+    /// extern crate bigfloppa;
     /// use std::str::FromStr;
     ///
-    /// assert_eq!(bigdecimal::BigDecimal::from_str("1.1").unwrap().as_bigint_and_exponent(),
+    /// assert_eq!(bigfloppa::BigDecimal::from_str("1.1").unwrap().as_bigint_and_exponent(),
     ///            (num_bigint::BigInt::from_str("11").unwrap(), 1));
     #[inline]
     pub fn as_bigint_and_exponent(&self) -> (BigInt, i64) {
@@ -297,10 +297,10 @@ impl BigDecimal {
     ///
     /// ```
     /// extern crate num_bigint;
-    /// extern crate bigdecimal;
+    /// extern crate bigfloppa;
     /// use std::str::FromStr;
     ///
-    /// assert_eq!(bigdecimal::BigDecimal::from_str("1.1").unwrap().into_bigint_and_exponent(),
+    /// assert_eq!(bigfloppa::BigDecimal::from_str("1.1").unwrap().into_bigint_and_exponent(),
     ///            (num_bigint::BigInt::from_str("11").unwrap(), 1));
     #[inline]
     pub fn into_bigint_and_exponent(self) -> (BigInt, i64) {
@@ -758,16 +758,16 @@ impl Ord for BigDecimal {
     /// ```
     /// use std::str::FromStr;
     ///
-    /// let a = bigdecimal::BigDecimal::from_str("-1").unwrap();
-    /// let b = bigdecimal::BigDecimal::from_str("1").unwrap();
+    /// let a = bigfloppa::BigDecimal::from_str("-1").unwrap();
+    /// let b = bigfloppa::BigDecimal::from_str("1").unwrap();
     /// assert!(a < b);
     /// assert!(b > a);
-    /// let c = bigdecimal::BigDecimal::from_str("1").unwrap();
+    /// let c = bigfloppa::BigDecimal::from_str("1").unwrap();
     /// assert!(b >= c);
     /// assert!(c >= b);
-    /// let d = bigdecimal::BigDecimal::from_str("10.0").unwrap();
+    /// let d = bigfloppa::BigDecimal::from_str("10.0").unwrap();
     /// assert!(d > c);
-    /// let e = bigdecimal::BigDecimal::from_str(".5").unwrap();
+    /// let e = bigfloppa::BigDecimal::from_str(".5").unwrap();
     /// assert!(e < c);
     /// ```
     #[inline]

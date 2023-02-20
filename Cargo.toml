@@ -1,5 +1,5 @@
 [package]
-name = "bigdecimal"
+name = "bigfloppa"
 version = "0.3.0"
 authors = ["Andrew Kubera"]
 description = "Arbitrary precision decimal numbers"

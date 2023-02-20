@@ -1,7 +1,7 @@
-extern crate bigdecimal;
-
-use bigdecimal::BigDecimal;
+use bigfloppa::BigDecimal;
 use std::str::FromStr;
+
+extern crate bigfloppa;
 
 fn main() {
     let input = std::env::args().skip(1).next().unwrap_or("0.7".to_string());

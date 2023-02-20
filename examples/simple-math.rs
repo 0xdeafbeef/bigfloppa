@@ -1,6 +1,7 @@
-extern crate bigdecimal;
-use bigdecimal::*;
+use bigfloppa::*;
 use std::str::FromStr;
+
+extern crate bigfloppa;
 
 /* Default example output:
 
