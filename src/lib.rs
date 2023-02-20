@@ -51,6 +51,7 @@ extern crate num_integer;
 
 #[cfg(feature = "serde")]
 extern crate serde;
+extern crate sqlx_core;
 
 use std::cmp::Ordering;
 use std::convert::TryFrom;
@@ -62,6 +63,7 @@ use std::num::{ParseFloatError, ParseIntError};
 use std::ops::{Add, AddAssign, Div, Mul, MulAssign, Neg, Rem, Sub, SubAssign};
 use std::iter::Sum;
 use std::str::{self, FromStr};
+use std::sync::atomic::{AtomicI64, AtomicU64};
 
 use num_bigint::{BigInt, ParseBigIntError, Sign, ToBigInt};
 use num_integer::Integer as IntegerTrait;
@@ -70,8 +72,16 @@ pub use num_traits::{FromPrimitive, Num, One, Signed, ToPrimitive, Zero};
 #[allow(clippy::approx_constant)]
 const LOG2_10: f64 = 3.321928094887362_f64;
 
+static PRECISION:AtomicU64=AtomicU64::new(100);
+static SCALE:AtomicI64=AtomicI64::new(150);
+
+
+
 #[macro_use]
 mod macros;
+
+#[cfg(feature = "sqlx")]
+mod sqlx;
 
 #[inline(always)]
 fn ten_to_the(pow: u64) -> BigInt {
@@ -108,6 +118,16 @@ fn count_decimal_digits(int: &BigInt) -> u64 {
     }
     digits
 }
+
+pub fn set_max_scale(scale:i64){
+    SCALE.store(scale,std::sync::atomic::Ordering::Release);
+}
+
+pub fn set_max_precision(scale:u64){
+    PRECISION.store(scale,std::sync::atomic::Ordering::Release);
+}
+
+
 
 /// Internal function used for rounding
 ///
@@ -415,11 +435,8 @@ impl BigDecimal {
         //     running_result = BigDecimal::from(600)
         // }
 
-        // TODO: Use context variable to set precision
-        let max_precision = 100;
-
-        // TODO: Use context variable to set precision
-        let max_scale = 18;
+        let max_precision = crate::PRECISION.load(std::sync::atomic::Ordering::Acquire);
+        let max_scale = crate::SCALE.load(std::sync::atomic::Ordering::Acquire);
 
         let next_iteration = move |r: BigDecimal| {
             // division needs to be precise to (at least) one extra digit
@@ -486,11 +503,8 @@ impl BigDecimal {
             }
         };
 
-        // TODO: Use context variable to set precision
-        let max_precision = 100;
-
-        // TODO: Use context variable to set precision
-        let max_scale = 18;
+        let max_precision = crate::PRECISION.load(std::sync::atomic::Ordering::Acquire);
+        let max_scale = crate::SCALE.load(std::sync::atomic::Ordering::Acquire);
 
         let three = BigDecimal::from(3);
 
@@ -558,7 +572,8 @@ impl BigDecimal {
             }
         };
 
-        let max_precision = 100;
+        let max_precision = crate::PRECISION.load(std::sync::atomic::Ordering::Acquire);
+
         let next_iteration = move |r: BigDecimal| {
             let two = BigDecimal::from(2);
             let tmp = two - self * &r;
@@ -1364,8 +1379,8 @@ impl Div<BigDecimal> for BigDecimal {
             };
         }
 
-        let max_precision = 100;
-        let max_scale = 18;
+        let max_precision = crate::PRECISION.load(std::sync::atomic::Ordering::Acquire);
+        let max_scale = crate::SCALE.load(std::sync::atomic::Ordering::Acquire);
 
         return impl_division(self.int_val, &other.int_val, scale, max_precision, max_scale);
     }
@@ -1391,8 +1406,8 @@ impl<'a> Div<&'a BigDecimal> for BigDecimal {
             };
         }
 
-        let max_precision = 100;
-        let max_scale = 18;
+        let max_precision = crate::PRECISION.load(std::sync::atomic::Ordering::Acquire);
+        let max_scale = crate::SCALE.load(std::sync::atomic::Ordering::Acquire);
 
         return impl_division(self.int_val, &other.int_val, scale, max_precision, max_scale);
     }
@@ -1425,8 +1440,8 @@ impl<'a, 'b> Div<&'b BigDecimal> for &'a BigDecimal {
             };
         }
 
-        let max_precision = 100;
-        let max_scale = 18;
+        let max_precision = crate::PRECISION.load(std::sync::atomic::Ordering::Acquire);
+        let max_scale = crate::SCALE.load(std::sync::atomic::Ordering::Acquire);
 
         return impl_division(num_int.clone(), &den_int, scale, max_precision, max_scale);
     }
