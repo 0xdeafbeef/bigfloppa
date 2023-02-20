@@ -51,7 +51,6 @@ extern crate num_integer;
 
 #[cfg(feature = "serde")]
 extern crate serde;
-extern crate sqlx_core;
 
 use std::cmp::Ordering;
 use std::convert::TryFrom;
@@ -2064,11 +2063,11 @@ mod bigdecimal_serde {
 #[rustfmt::skip]
 #[cfg(test)]
 mod bigdecimal_tests {
-    use BigDecimal;
     use num_traits::{ToPrimitive, FromPrimitive, Signed, Zero, One};
     use std::convert::TryFrom;
     use std::str::FromStr;
     use num_bigint;
+    use crate::BigDecimal;
 
     #[test]
     fn test_sum() {

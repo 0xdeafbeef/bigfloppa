@@ -7,18 +7,24 @@ use sqlx_core::encode::{Encode, IsNull};
 use sqlx_core::error::BoxDynError;
 use sqlx_core::postgres::{PgArgumentBuffer, PgHasArrayType, PgTypeInfo, PgValueFormat, PgValueRef, Postgres};
 use sqlx_core::types::Type;
-use BigDecimal;
+
+mod pg_numeric;
+
+use crate::BigDecimal;
+use crate::sqlx::pg_numeric::{PgNumeric, PgNumericSign};
 
 
 impl Type<Postgres> for BigDecimal {
     fn type_info() -> PgTypeInfo {
-       bigdecimal::BigDecimal::type_info()
+        // private constant :(
+        bigdecimal::BigDecimal::type_info()
     }
 }
 
 impl PgHasArrayType for BigDecimal {
     fn array_type_info() -> PgTypeInfo {
-        bigdecimal::BigDecimal::array_type_info()
+        // private constant :(
+        bigdecimal::BigDecimal::type_info()
     }
 }
 
@@ -165,6 +171,7 @@ impl Decode<'_, Postgres> for BigDecimal {
     }
 }
 
+
 #[cfg(test)]
 mod bigdecimal_to_pgnumeric {
     use super::{BigDecimal, PgNumeric, PgNumericSign};
@@ -180,7 +187,7 @@ mod bigdecimal_to_pgnumeric {
                 sign: PgNumericSign::Positive,
                 scale: 0,
                 weight: 0,
-                digits: vec![]
+                digits: vec![],
             }
         );
     }
@@ -194,7 +201,7 @@ mod bigdecimal_to_pgnumeric {
                 sign: PgNumericSign::Positive,
                 scale: 0,
                 weight: 0,
-                digits: vec![1]
+                digits: vec![1],
             }
         );
     }
@@ -208,7 +215,7 @@ mod bigdecimal_to_pgnumeric {
                 sign: PgNumericSign::Positive,
                 scale: 0,
                 weight: 0,
-                digits: vec![10]
+                digits: vec![10],
             }
         );
     }
@@ -222,7 +229,7 @@ mod bigdecimal_to_pgnumeric {
                 sign: PgNumericSign::Positive,
                 scale: 0,
                 weight: 0,
-                digits: vec![100]
+                digits: vec![100],
             }
         );
     }
@@ -237,7 +244,7 @@ mod bigdecimal_to_pgnumeric {
                 sign: PgNumericSign::Positive,
                 scale: 0,
                 weight: 1,
-                digits: vec![1]
+                digits: vec![1],
             }
         );
     }
@@ -251,7 +258,7 @@ mod bigdecimal_to_pgnumeric {
                 sign: PgNumericSign::Positive,
                 scale: 0,
                 weight: 1,
-                digits: vec![1, 2345]
+                digits: vec![1, 2345],
             }
         );
     }
@@ -265,7 +272,7 @@ mod bigdecimal_to_pgnumeric {
                 sign: PgNumericSign::Positive,
                 scale: 1,
                 weight: -1,
-                digits: vec![1000]
+                digits: vec![1000],
             }
         );
     }
@@ -279,7 +286,7 @@ mod bigdecimal_to_pgnumeric {
                 sign: PgNumericSign::Positive,
                 scale: 2,
                 weight: -1,
-                digits: vec![100]
+                digits: vec![100],
             }
         );
     }
@@ -293,7 +300,7 @@ mod bigdecimal_to_pgnumeric {
                 sign: PgNumericSign::Positive,
                 scale: 3,
                 weight: -1,
-                digits: vec![120]
+                digits: vec![120],
             }
         );
     }
@@ -307,7 +314,7 @@ mod bigdecimal_to_pgnumeric {
                 sign: PgNumericSign::Positive,
                 scale: 4,
                 weight: 0,
-                digits: vec![1, 2345]
+                digits: vec![1, 2345],
             }
         );
     }
@@ -321,7 +328,7 @@ mod bigdecimal_to_pgnumeric {
                 sign: PgNumericSign::Positive,
                 scale: 5,
                 weight: -1,
-                digits: vec![1234, 5000]
+                digits: vec![1234, 5000],
             }
         );
     }
@@ -335,7 +342,7 @@ mod bigdecimal_to_pgnumeric {
                 sign: PgNumericSign::Positive,
                 scale: 5,
                 weight: -1,
-                digits: vec![0123, 4000]
+                digits: vec![0123, 4000],
             }
         );
     }
@@ -349,7 +356,7 @@ mod bigdecimal_to_pgnumeric {
                 sign: PgNumericSign::Positive,
                 scale: 5,
                 weight: 1,
-                digits: vec![1, 2345, 6789]
+                digits: vec![1, 2345, 6789],
             }
         );
     }
@@ -363,7 +370,7 @@ mod bigdecimal_to_pgnumeric {
                 sign: PgNumericSign::Positive,
                 scale: 8,
                 weight: -2,
-                digits: vec![1234]
+                digits: vec![1234],
             }
         );
     }
@@ -378,7 +385,7 @@ mod bigdecimal_to_pgnumeric {
                 sign: PgNumericSign::Positive,
                 scale: 0,
                 weight: 0,
-                digits: vec![1234]
+                digits: vec![1234],
             }
         );
     }
@@ -393,7 +400,7 @@ mod bigdecimal_to_pgnumeric {
                 sign: PgNumericSign::Negative,
                 scale: 0,
                 weight: 0,
-                digits: vec![1234]
+                digits: vec![1234],
             }
         );
     }
@@ -408,7 +415,7 @@ mod bigdecimal_to_pgnumeric {
                 sign: PgNumericSign::Positive,
                 scale: 0,
                 weight: 1,
-                digits: vec![1234, 5678]
+                digits: vec![1234, 5678],
             }
         );
     }
@@ -423,7 +430,7 @@ mod bigdecimal_to_pgnumeric {
                 sign: PgNumericSign::Negative,
                 scale: 0,
                 weight: 1,
-                digits: vec![1234, 5678]
+                digits: vec![1234, 5678],
             }
         );
     }
