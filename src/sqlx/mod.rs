@@ -13,7 +13,6 @@ mod pg_numeric;
 use crate::BigDecimal;
 use crate::sqlx::pg_numeric::{PgNumeric, PgNumericSign};
 
-
 impl Type<Postgres> for BigDecimal {
     fn type_info() -> PgTypeInfo {
         // private constant :(
@@ -34,10 +33,7 @@ impl TryFrom<PgNumeric> for BigDecimal {
     fn try_from(numeric: PgNumeric) -> Result<Self, BoxDynError> {
         let (digits, sign, weight) = match numeric {
             PgNumeric::Number {
-                digits,
-                sign,
-                weight,
-                ..
+                digits, sign, weight, ..
             } => (digits, sign, weight),
 
             PgNumeric::NotANumber => {
@@ -65,8 +61,7 @@ impl TryFrom<PgNumeric> for BigDecimal {
             cents.push((digit % 100) as u8);
         }
 
-        let bigint = BigInt::from_radix_be(sign, &cents, 100)
-            .ok_or("PgNumeric contained an out-of-range digit")?;
+        let bigint = BigInt::from_radix_be(sign, &cents, 100).ok_or("PgNumeric contained an out-of-range digit")?;
 
         Ok(BigDecimal::new(bigint, scale))
     }
@@ -101,7 +96,7 @@ impl TryFrom<&'_ BigDecimal> for PgNumeric {
             // the `-1` is a fix for an off by 1 error (4 digits should still be 0 weight)
             (weight_10 - 1) / 4
         }
-            .try_into()?;
+        .try_into()?;
 
         let digits_len = if base_10.len() % 4 != 0 {
             base_10.len() / 4 + 1
@@ -170,7 +165,6 @@ impl Decode<'_, Postgres> for BigDecimal {
         }
     }
 }
-
 
 #[cfg(test)]
 mod bigdecimal_to_pgnumeric {

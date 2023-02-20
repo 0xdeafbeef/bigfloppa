@@ -39,15 +39,10 @@
 //!
 //! println!("Input ({}) with 10 decimals: {} vs {})", input, dec, float);
 //! ```
-#![allow(clippy::unreadable_literal)]
-#![allow(clippy::needless_return)]
-#![allow(clippy::suspicious_arithmetic_impl)]
-#![allow(clippy::suspicious_op_assign_impl)]
-#![allow(clippy::redundant_field_names)]
+#![allow(clippy::comparison_chain)]
 
-pub extern crate num_bigint;
-pub extern crate num_traits;
-extern crate num_integer;
+
+pub use num_bigint::BigInt;
 
 #[cfg(feature = "serde")]
 extern crate serde;
@@ -64,17 +59,15 @@ use std::iter::Sum;
 use std::str::{self, FromStr};
 use std::sync::atomic::{AtomicI64, AtomicU64};
 
-use num_bigint::{BigInt, ParseBigIntError, Sign, ToBigInt};
+pub use num_bigint::{ParseBigIntError, Sign, ToBigInt};
 use num_integer::Integer as IntegerTrait;
 pub use num_traits::{FromPrimitive, Num, One, Signed, ToPrimitive, Zero};
 
 #[allow(clippy::approx_constant)]
 const LOG2_10: f64 = 3.321928094887362_f64;
 
-static PRECISION:AtomicU64=AtomicU64::new(100);
-static SCALE:AtomicI64=AtomicI64::new(100);
-
-
+static PRECISION: AtomicU64 = AtomicU64::new(100);
+static SCALE: AtomicI64 = AtomicI64::new(100);
 
 #[macro_use]
 mod macros;
@@ -118,15 +111,13 @@ fn count_decimal_digits(int: &BigInt) -> u64 {
     digits
 }
 
-pub fn set_max_scale(scale:i64){
-    SCALE.store(scale,std::sync::atomic::Ordering::Release);
+pub fn set_max_scale(scale: i64) {
+    SCALE.store(scale, std::sync::atomic::Ordering::Release);
 }
 
-pub fn set_max_precision(scale:u64){
-    PRECISION.store(scale,std::sync::atomic::Ordering::Release);
+pub fn set_max_precision(scale: u64) {
+    PRECISION.store(scale, std::sync::atomic::Ordering::Release);
 }
-
-
 
 /// Internal function used for rounding
 ///
@@ -176,10 +167,7 @@ impl BigDecimal {
     ///
     #[inline]
     pub fn new(digits: BigInt, scale: i64) -> BigDecimal {
-        BigDecimal {
-            int_val: digits,
-            scale: scale,
-        }
+        BigDecimal { int_val: digits, scale }
     }
 
     /// Creates and initializes a `BigDecimal`.
@@ -213,16 +201,18 @@ impl BigDecimal {
             return BigDecimal::new(BigInt::zero(), new_scale);
         }
 
-        if new_scale > self.scale {
-            let scale_diff = new_scale - self.scale;
-            let int_val = &self.int_val * ten_to_the(scale_diff as u64);
-            BigDecimal::new(int_val, new_scale)
-        } else if new_scale < self.scale {
-            let scale_diff = self.scale - new_scale;
-            let int_val = &self.int_val / ten_to_the(scale_diff as u64);
-            BigDecimal::new(int_val, new_scale)
-        } else {
-            self.clone()
+        match new_scale.cmp(&self.scale) {
+            Ordering::Greater => {
+                let scale_diff = new_scale - self.scale;
+                let int_val = &self.int_val * ten_to_the(scale_diff as u64);
+                BigDecimal::new(int_val, new_scale)
+            }
+            Ordering::Less => {
+                let scale_diff = self.scale - new_scale;
+                let int_val = &self.int_val / ten_to_the(scale_diff as u64);
+                BigDecimal::new(int_val, new_scale)
+            }
+            Ordering::Equal => self.clone(),
         }
     }
 
@@ -435,7 +425,6 @@ impl BigDecimal {
         // }
 
         let max_precision = crate::PRECISION.load(std::sync::atomic::Ordering::Acquire);
-        let max_scale = crate::SCALE.load(std::sync::atomic::Ordering::Acquire);
 
         let next_iteration = move |r: BigDecimal| {
             // division needs to be precise to (at least) one extra digit
@@ -444,7 +433,7 @@ impl BigDecimal {
                 &r.int_val,
                 self.scale - r.scale,
                 max_precision + 1,
-                0
+                0,
             );
 
             // half will increase precision on each iteration
@@ -474,7 +463,7 @@ impl BigDecimal {
             };
         }
 
-        return Some(result);
+        Some(result)
     }
 
     /// Take the cube root of the number
@@ -516,7 +505,13 @@ impl BigDecimal {
                 0,
             );
             let tmp = tmp + r.double();
-            impl_division(tmp.int_val, &three.int_val, tmp.scale - three.scale, max_precision + 1, 0)
+            impl_division(
+                tmp.int_val,
+                &three.int_val,
+                tmp.scale - three.scale,
+                max_precision + 1,
+                0,
+            )
         };
 
         // result initial
@@ -541,7 +536,7 @@ impl BigDecimal {
             };
         }
 
-        return result;
+        result
     }
 
     /// Compute the reciprical of the number: x<sup>-1</sup>
@@ -602,7 +597,7 @@ impl BigDecimal {
             };
         }
 
-        return result;
+        result
     }
 
     /// Return number rounded to round_digits precision after the decimal point
@@ -680,7 +675,13 @@ impl BigDecimal {
             term *= self;
             factorial *= n;
             // ∑ term=x^n/n!
-            result += impl_division(term.int_val.clone(), &factorial, term.scale, 117 + precision, 117 + precision as i64);
+            result += impl_division(
+                term.int_val.clone(),
+                &factorial,
+                term.scale,
+                117 + precision,
+                117 + precision as i64,
+            );
 
             let trimmed_result = result.with_prec(105);
             if prev_result == trimmed_result {
@@ -688,7 +689,7 @@ impl BigDecimal {
             }
             prev_result = trimmed_result;
         }
-        return result.with_prec(100);
+        result.with_prec(100)
     }
 
     #[must_use]
@@ -698,7 +699,7 @@ impl BigDecimal {
         }
         let (sign, mut digits) = self.int_val.to_radix_be(10);
         let trailing_count = digits.iter().rev().take_while(|i| **i == 0).count();
-        let trunc_to = digits.len() - trailing_count as usize;
+        let trunc_to = digits.len() - trailing_count;
         digits.truncate(trunc_to);
         let int_val = BigInt::from_radix_be(sign, &digits, 10).unwrap();
         let scale = self.scale - trailing_count as i64;
@@ -762,24 +763,9 @@ impl FromStr for BigDecimal {
     }
 }
 
-#[allow(deprecated)] // trim_right_match -> trim_end_match
 impl Hash for BigDecimal {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        let mut dec_str = self.int_val.to_str_radix(10).to_string();
-        let scale = self.scale;
-        let zero = self.int_val.is_zero();
-        if scale > 0 && !zero {
-            let mut cnt = 0;
-            dec_str = dec_str
-                .trim_right_matches(|x| {
-                    cnt += 1;
-                    x == '0' && cnt <= scale
-                })
-                .to_string();
-        } else if scale < 0 && !zero {
-            dec_str.push_str(&"0".repeat(self.scale.abs() as usize));
-        }
-        dec_str.hash(state);
+        (&self.int_val, self.scale).hash(state)
     }
 }
 
@@ -1012,7 +998,7 @@ impl<'a> AddAssign<&'a BigDecimal> for BigDecimal {
     }
 }
 
-impl<'a> AddAssign<BigInt> for BigDecimal {
+impl AddAssign<BigInt> for BigDecimal {
     #[inline]
     fn add_assign(&mut self, rhs: BigInt) {
         *self += BigDecimal::new(rhs, 0)
@@ -1174,19 +1160,23 @@ forward_val_assignop!(impl SubAssign for BigDecimal, sub_assign);
 impl<'a> SubAssign<&'a BigDecimal> for BigDecimal {
     #[inline]
     fn sub_assign(&mut self, rhs: &BigDecimal) {
-        if self.scale < rhs.scale {
-            let lhs = self.with_scale(rhs.scale);
-            self.int_val = lhs.int_val - &rhs.int_val;
-            self.scale = rhs.scale;
-        } else if self.scale > rhs.scale {
-            self.int_val -= rhs.with_scale(self.scale).int_val;
-        } else {
-            self.int_val = &self.int_val - &rhs.int_val;
+        match self.scale.cmp(&rhs.scale) {
+            Ordering::Less => {
+                let lhs = self.with_scale(rhs.scale);
+                self.int_val = lhs.int_val - &rhs.int_val;
+                self.scale = rhs.scale;
+            }
+            Ordering::Greater => {
+                self.int_val -= rhs.with_scale(self.scale).int_val;
+            }
+            Ordering::Equal => {
+                self.int_val = &self.int_val - &rhs.int_val;
+            }
         }
     }
 }
 
-impl<'a> SubAssign<BigInt> for BigDecimal {
+impl SubAssign<BigInt> for BigDecimal {
     #[inline(always)]
     fn sub_assign(&mut self, rhs: BigInt) {
         *self -= BigDecimal::new(rhs, 0)
@@ -1223,6 +1213,7 @@ impl<'a> Mul<&'a BigDecimal> for BigDecimal {
     type Output = BigDecimal;
 
     #[inline]
+    #[allow(clippy::suspicious_arithmetic_impl)] // false positive
     fn mul(mut self, rhs: &'a BigDecimal) -> BigDecimal {
         self.scale += rhs.scale;
         MulAssign::mul_assign(&mut self.int_val, &rhs.int_val);
@@ -1328,7 +1319,7 @@ fn impl_division(mut num: BigInt, den: &BigInt, mut scale: i64, max_precision: u
     if remainder.is_zero() {
         return BigDecimal {
             int_val: quotient,
-            scale: scale,
+            scale,
         };
     }
 
@@ -1352,9 +1343,8 @@ fn impl_division(mut num: BigInt, den: &BigInt, mut scale: i64, max_precision: u
         quotient += get_rounding_term(&remainder.div(den));
     }
 
-    let result = BigDecimal::new(quotient, scale);
     // println!(" {} / {}\n = {}\n", self, other, result);
-    return result;
+    BigDecimal::new(quotient, scale)
 }
 
 impl Div<BigDecimal> for BigDecimal {
@@ -1373,14 +1363,14 @@ impl Div<BigDecimal> for BigDecimal {
         if self.int_val == other.int_val {
             return BigDecimal {
                 int_val: 1.into(),
-                scale: scale,
+                scale,
             };
         }
 
         let max_precision = crate::PRECISION.load(std::sync::atomic::Ordering::Acquire);
         let max_scale = crate::SCALE.load(std::sync::atomic::Ordering::Acquire);
 
-        return impl_division(self.int_val, &other.int_val, scale, max_precision, max_scale);
+        impl_division(self.int_val, &other.int_val, scale, max_precision, max_scale)
     }
 }
 
@@ -1400,14 +1390,14 @@ impl<'a> Div<&'a BigDecimal> for BigDecimal {
         if self.int_val == other.int_val {
             return BigDecimal {
                 int_val: 1.into(),
-                scale: scale,
+                scale,
             };
         }
 
         let max_precision = crate::PRECISION.load(std::sync::atomic::Ordering::Acquire);
         let max_scale = crate::SCALE.load(std::sync::atomic::Ordering::Acquire);
 
-        return impl_division(self.int_val, &other.int_val, scale, max_precision, max_scale);
+        impl_division(self.int_val, &other.int_val, scale, max_precision, max_scale)
     }
 }
 
@@ -1434,14 +1424,14 @@ impl<'a, 'b> Div<&'b BigDecimal> for &'a BigDecimal {
         if num_int == den_int {
             return BigDecimal {
                 int_val: 1.into(),
-                scale: scale,
+                scale,
             };
         }
 
         let max_precision = crate::PRECISION.load(std::sync::atomic::Ordering::Acquire);
         let max_scale = crate::SCALE.load(std::sync::atomic::Ordering::Acquire);
 
-        return impl_division(num_int.clone(), &den_int, scale, max_precision, max_scale);
+        impl_division(num_int.clone(), den_int, scale, max_precision, max_scale)
     }
 }
 
@@ -1612,7 +1602,7 @@ impl fmt::Display for BigDecimal {
                 // Case 2.1, entirely before the decimal point
                 // We should prepend zeros
                 let zeros = location as usize - abs_int.len();
-                let abs_int = abs_int + "0".repeat(zeros as usize).as_str();
+                let abs_int = abs_int + "0".repeat(zeros).as_str();
                 (abs_int, "".to_string())
             } else {
                 // Case 2.2, somewhere around the decimal point
@@ -1642,10 +1632,7 @@ impl fmt::Display for BigDecimal {
             before
         };
 
-        let non_negative = match self.int_val.sign() {
-            Sign::Plus | Sign::NoSign => true,
-            _ => false,
-        };
+        let non_negative = matches!(self.int_val.sign(), Sign::Plus | Sign::NoSign);
         //pad_integral does the right thing although we have a decimal
         f.pad_integral(non_negative, "", &complete_without_sign)
     }
@@ -1693,7 +1680,7 @@ impl Num for BigDecimal {
         };
 
         // TEMPORARY: Test for emptiness - remove once BigInt supports similar error
-        if base_part == "" {
+        if base_part.is_empty() {
             return Err(ParseBigDecimalError::Empty);
         }
 
@@ -1798,20 +1785,14 @@ impl From<u128> for BigDecimal {
 impl From<(BigInt, i64)> for BigDecimal {
     #[inline]
     fn from((int_val, scale): (BigInt, i64)) -> Self {
-        BigDecimal {
-            int_val: int_val,
-            scale: scale,
-        }
+        BigDecimal { int_val, scale }
     }
 }
 
 impl From<BigInt> for BigDecimal {
     #[inline]
     fn from(int_val: BigInt) -> Self {
-        BigDecimal {
-            int_val: int_val,
-            scale: 0,
-        }
+        BigDecimal { int_val, scale: 0 }
     }
 }
 
@@ -2065,7 +2046,7 @@ mod bigdecimal_tests {
     use num_traits::{ToPrimitive, FromPrimitive, Signed, Zero, One};
     use std::convert::TryFrom;
     use std::str::FromStr;
-    use num_bigint;
+
     use crate::BigDecimal;
 
     #[test]
@@ -2696,12 +2677,12 @@ mod bigdecimal_tests {
         ];
 
         for s in true_vals {
-            let d = BigDecimal::from_str(&s).unwrap();
+            let d = BigDecimal::from_str(s).unwrap();
             assert!(d.is_integer());
         }
 
         for s in false_vals {
-            let d = BigDecimal::from_str(&s).unwrap();
+            let d = BigDecimal::from_str(s).unwrap();
             assert!(!d.is_integer());
         }
     }

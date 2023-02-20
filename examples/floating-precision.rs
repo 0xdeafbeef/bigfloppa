@@ -4,7 +4,7 @@ use std::str::FromStr;
 extern crate bigfloppa;
 
 fn main() {
-    let input = std::env::args().skip(1).next().unwrap_or("0.7".to_string());
+    let input = std::env::args().nth(1).unwrap_or("0.7".to_string());
     let decimal = BigDecimal::from_str(&input).expect("invalid decimal");
     let floating = f32::from_str(&input).expect("invalid float");
 
