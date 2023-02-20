@@ -1752,9 +1752,29 @@ impl From<i64> for BigDecimal {
     }
 }
 
+impl From<i128> for BigDecimal {
+    #[inline]
+    fn from(n: i128) -> Self {
+        BigDecimal {
+            int_val: BigInt::from(n),
+            scale: 0,
+        }
+    }
+}
+
 impl From<u64> for BigDecimal {
     #[inline]
     fn from(n: u64) -> Self {
+        BigDecimal {
+            int_val: BigInt::from(n),
+            scale: 0,
+        }
+    }
+}
+
+impl From<u128> for BigDecimal {
+    #[inline]
+    fn from(n: u128) -> Self {
         BigDecimal {
             int_val: BigInt::from(n),
             scale: 0,
