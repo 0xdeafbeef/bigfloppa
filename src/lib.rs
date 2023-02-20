@@ -765,7 +765,22 @@ impl FromStr for BigDecimal {
 
 impl Hash for BigDecimal {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        (&self.int_val, self.scale).hash(state)
+        // it's faster to hash the string representation than normalize the number (50% faster)
+        let mut dec_str = self.int_val.to_str_radix(10);
+        let scale = self.scale;
+        let zero = self.int_val.is_zero();
+        if scale > 0 && !zero {
+            let mut cnt = 0;
+            dec_str = dec_str
+                .trim_end_matches(|x| {
+                    cnt += 1;
+                    x == '0' && cnt <= scale
+                })
+                .to_string();
+        } else if scale < 0 && !zero {
+            dec_str.push_str(&"0".repeat(self.scale.unsigned_abs() as usize));
+        }
+        dec_str.hash(state);
     }
 }
 
