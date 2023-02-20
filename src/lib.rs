@@ -1452,6 +1452,7 @@ impl<'a> Rem<&'a BigDecimal> for BigDecimal {
         BigDecimal::new(result, scale)
     }
 }
+
 impl<'a> Rem<BigDecimal> for &'a BigDecimal {
     type Output = BigDecimal;
 
@@ -1555,14 +1556,14 @@ impl Signed for BigDecimal {
 
 impl Sum for BigDecimal {
     #[inline]
-    fn sum<I: Iterator<Item = BigDecimal>>(iter: I) -> BigDecimal {
+    fn sum<I: Iterator<Item=BigDecimal>>(iter: I) -> BigDecimal {
         iter.fold(Zero::zero(), |a, b| a + b)
     }
 }
 
 impl<'a> Sum<&'a BigDecimal> for BigDecimal {
     #[inline]
-    fn sum<I: Iterator<Item = &'a BigDecimal>>(iter: I) -> BigDecimal {
+    fn sum<I: Iterator<Item=&'a BigDecimal>>(iter: I) -> BigDecimal {
         iter.fold(Zero::zero(), |a, b| a + b)
     }
 }
@@ -1706,9 +1707,20 @@ impl ToPrimitive for BigDecimal {
             Sign::NoSign => Some(0),
         }
     }
+    fn to_i128(&self) -> Option<i128> {
+        self.with_scale(0).int_val.to_i128()
+    }
     fn to_u64(&self) -> Option<u64> {
         match self.sign() {
             Sign::Plus => self.with_scale(0).int_val.to_u64(),
+            Sign::NoSign => Some(0),
+            Sign::Minus => None,
+        }
+    }
+
+    fn to_u128(&self) -> Option<u128> {
+        match self.sign() {
+            Sign::Plus => self.with_scale(0).int_val.to_u128(),
             Sign::NoSign => Some(0),
             Sign::Minus => None,
         }
@@ -1803,9 +1815,17 @@ impl FromPrimitive for BigDecimal {
         Some(BigDecimal::from(n))
     }
 
+    fn from_i128(n: i128) -> Option<Self> {
+        Some(BigDecimal::new(n.into(), 0))
+    }
+
     #[inline]
     fn from_u64(n: u64) -> Option<Self> {
         Some(BigDecimal::from(n))
+    }
+
+    fn from_u128(n: u128) -> Option<Self> {
+        Some(BigDecimal::new(n.into(), 0))
     }
 
     #[inline]
@@ -1838,8 +1858,8 @@ mod bigdecimal_serde {
 
     impl ser::Serialize for BigDecimal {
         fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: ser::Serializer,
+            where
+                S: ser::Serializer,
         {
             serializer.collect_str(&self)
         }
@@ -1855,29 +1875,29 @@ mod bigdecimal_serde {
         }
 
         fn visit_str<E>(self, value: &str) -> Result<BigDecimal, E>
-        where
-            E: de::Error,
+            where
+                E: de::Error,
         {
             BigDecimal::from_str(value).map_err(|err| E::custom(format!("{}", err)))
         }
 
         fn visit_u64<E>(self, value: u64) -> Result<BigDecimal, E>
-        where
-            E: de::Error,
+            where
+                E: de::Error,
         {
             Ok(BigDecimal::from(value))
         }
 
         fn visit_i64<E>(self, value: i64) -> Result<BigDecimal, E>
-        where
-            E: de::Error,
+            where
+                E: de::Error,
         {
             Ok(BigDecimal::from(value))
         }
 
         fn visit_f64<E>(self, value: f64) -> Result<BigDecimal, E>
-        where
-            E: de::Error,
+            where
+                E: de::Error,
         {
             BigDecimal::try_from(value).map_err(|err| E::custom(format!("{}", err)))
         }
@@ -1886,8 +1906,8 @@ mod bigdecimal_serde {
     #[cfg(not(feature = "string-only"))]
     impl<'de> de::Deserialize<'de> for BigDecimal {
         fn deserialize<D>(d: D) -> Result<Self, D::Error>
-        where
-            D: de::Deserializer<'de>,
+            where
+                D: de::Deserializer<'de>,
         {
             d.deserialize_any(BigDecimalVisitor)
         }
@@ -1896,8 +1916,8 @@ mod bigdecimal_serde {
     #[cfg(feature = "string-only")]
     impl<'de> de::Deserialize<'de> for BigDecimal {
         fn deserialize<D>(d: D) -> Result<Self, D::Error>
-        where
-            D: de::Deserializer<'de>,
+            where
+                D: de::Deserializer<'de>,
         {
             d.deserialize_str(BigDecimalVisitor)
         }
@@ -2100,7 +2120,6 @@ mod bigdecimal_tests {
             ("31415.93", ::std::f32::consts::PI * 10000.0),
             ("94247.78", ::std::f32::consts::PI * 30000.0),
             // ("3.14159265358979323846264338327950288f32", ::std::f32::consts::PI),
-
         ];
         for (s, n) in vals {
             let expected = BigDecimal::from_str(s).unwrap();
@@ -2108,8 +2127,8 @@ mod bigdecimal_tests {
             assert_eq!(expected, value);
             // assert_eq!(expected, n);
         }
-
     }
+
     #[test]
     fn test_from_f64() {
         let vals = vec![
@@ -2153,7 +2172,6 @@ mod bigdecimal_tests {
         ];
 
         for &(x, y, z) in vals.iter() {
-
             let mut a = BigDecimal::from_str(x).unwrap();
             let b = BigDecimal::from_str(y).unwrap();
             let c = BigDecimal::from_str(z).unwrap();
@@ -2178,7 +2196,6 @@ mod bigdecimal_tests {
         ];
 
         for &(x, y, z) in vals.iter() {
-
             let mut a = BigDecimal::from_str(x).unwrap();
             let b = BigDecimal::from_str(y).unwrap();
             let c = BigDecimal::from_str(z).unwrap();
@@ -2196,7 +2213,6 @@ mod bigdecimal_tests {
 
     #[test]
     fn test_mul() {
-
         let vals = vec![
             ("2", "1", "2"),
             ("12.34", "1.234", "15.22756"),
@@ -2207,7 +2223,6 @@ mod bigdecimal_tests {
         ];
 
         for &(x, y, z) in vals.iter() {
-
             let mut a = BigDecimal::from_str(x).unwrap();
             let b = BigDecimal::from_str(y).unwrap();
             let c = BigDecimal::from_str(z).unwrap();
@@ -2253,7 +2268,6 @@ mod bigdecimal_tests {
         ];
 
         for &(x, y, z) in vals.iter() {
-
             let a = BigDecimal::from_str(x).unwrap();
             let b = BigDecimal::from_str(y).unwrap();
             let c = BigDecimal::from_str(z).unwrap();
@@ -2395,7 +2409,7 @@ mod bigdecimal_tests {
             ("-0.00", "0.000"),
             ("0.00", "-0.000"),
         ];
-        for &(x,y) in vals.iter() {
+        for &(x, y) in vals.iter() {
             let a = BigDecimal::from_str(x).unwrap();
             let b = BigDecimal::from_str(y).unwrap();
             assert_eq!(a, b);
@@ -2422,7 +2436,7 @@ mod bigdecimal_tests {
             ("10", "10000"),
             ("10.0", "100"),
         ];
-        for &(x,y) in vals.iter() {
+        for &(x, y) in vals.iter() {
             let a = BigDecimal::from_str(x).unwrap();
             let b = BigDecimal::from_str(y).unwrap();
             assert!(a != b, "{} == {}", a, b);
@@ -2450,7 +2464,7 @@ mod bigdecimal_tests {
             ("1234.5678", -3, "1200", -3),
             ("-1234", -2, "-1200", 0),
         ];
-        for &(x,xs,y,ys) in vals.iter() {
+        for &(x, xs, y, ys) in vals.iter() {
             let a = BigDecimal::from_str(x).unwrap().with_scale(xs);
             let b = BigDecimal::from_str(y).unwrap().with_scale(ys);
             assert_eq!(a, b);
@@ -2661,7 +2675,7 @@ mod bigdecimal_tests {
             let i = a.inverse();
             let b = BigDecimal::from_str(y).unwrap();
             assert_eq!(i, b);
-            assert_eq!(BigDecimal::from(1)/&a, b);
+            assert_eq!(BigDecimal::from(1) / &a, b);
             assert_eq!(i.inverse(), a);
             // assert_eq!(a.scale, b.scale, "scale mismatch ({} != {}", a, b);
         }
@@ -2852,13 +2866,13 @@ mod bigdecimal_tests {
     fn test_fmt() {
         let vals = vec![
             // b  s   ( {}        {:.1}     {:.4}      {:4.1}  {:+05.1}  {:<4.1}
-            (1, 0,  (  "1",     "1.0",    "1.0000",  " 1.0",  "+01.0",   "1.0 " )),
-            (1, 1,  (  "0.1",   "0.1",    "0.1000",  " 0.1",  "+00.1",   "0.1 " )),
-            (1, 2,  (  "0.01",  "0.0",    "0.0100",  " 0.0",  "+00.0",   "0.0 " )),
-            (1, -2, ("100",   "100.0",  "100.0000", "100.0", "+100.0", "100.0" )),
-            (-1, 0, ( "-1",    "-1.0",   "-1.0000",  "-1.0",  "-01.0",  "-1.0" )),
-            (-1, 1, ( "-0.1",  "-0.1",   "-0.1000",  "-0.1",  "-00.1",  "-0.1" )),
-            (-1, 2, ( "-0.01", "-0.0",   "-0.0100",  "-0.0",  "-00.0",  "-0.0" )),
+            (1, 0, ("1", "1.0", "1.0000", " 1.0", "+01.0", "1.0 ")),
+            (1, 1, ("0.1", "0.1", "0.1000", " 0.1", "+00.1", "0.1 ")),
+            (1, 2, ("0.01", "0.0", "0.0100", " 0.0", "+00.0", "0.0 ")),
+            (1, -2, ("100", "100.0", "100.0000", "100.0", "+100.0", "100.0")),
+            (-1, 0, ("-1", "-1.0", "-1.0000", "-1.0", "-01.0", "-1.0")),
+            (-1, 1, ("-0.1", "-0.1", "-0.1000", "-0.1", "-00.1", "-0.1")),
+            (-1, 2, ("-0.01", "-0.0", "-0.0100", "-0.0", "-00.0", "-0.0")),
         ];
         for (i, scale, results) in vals {
             let x = BigDecimal::new(num_bigint::BigInt::from(i), scale);
@@ -2903,20 +2917,20 @@ mod bigdecimal_tests {
 
         let vals = vec![
             (BigDecimal::new(BigInt::from(10), 2),
-            BigDecimal::new(BigInt::from(1), 1),
-            "0.1"),
+             BigDecimal::new(BigInt::from(1), 1),
+             "0.1"),
             (BigDecimal::new(BigInt::from(132400), -4),
-            BigDecimal::new(BigInt::from(1324), -6),
-            "1324000000"),
+             BigDecimal::new(BigInt::from(1324), -6),
+             "1324000000"),
             (BigDecimal::new(BigInt::from(1_900_000), 3),
-            BigDecimal::new(BigInt::from(19), -2),
-            "1900"),
+             BigDecimal::new(BigInt::from(19), -2),
+             "1900"),
             (BigDecimal::new(BigInt::from(0), -3),
-            BigDecimal::zero(),
-            "0"),
+             BigDecimal::zero(),
+             "0"),
             (BigDecimal::new(BigInt::from(0), 5),
-            BigDecimal::zero(),
-            "0"),
+             BigDecimal::zero(),
+             "0"),
         ];
 
         for (not_normalized, normalized, string) in vals {
@@ -2931,36 +2945,43 @@ mod bigdecimal_tests {
     fn test_bad_string_nan() {
         BigDecimal::from_str("hello").unwrap();
     }
+
     #[test]
     #[should_panic(expected = "Empty")]
     fn test_bad_string_empty() {
         BigDecimal::from_str("").unwrap();
     }
+
     #[test]
     #[should_panic(expected = "InvalidDigit")]
     fn test_bad_string_invalid_char() {
         BigDecimal::from_str("12z3.12").unwrap();
     }
+
     #[test]
     #[should_panic(expected = "InvalidDigit")]
     fn test_bad_string_nan_exponent() {
         BigDecimal::from_str("123.123eg").unwrap();
     }
+
     #[test]
     #[should_panic(expected = "Empty")]
     fn test_bad_string_empty_exponent() {
         BigDecimal::from_str("123.123E").unwrap();
     }
+
     #[test]
     #[should_panic(expected = "InvalidDigit")]
     fn test_bad_string_multiple_decimal_points() {
         BigDecimal::from_str("123.12.45").unwrap();
     }
+
     #[test]
     #[should_panic(expected = "Empty")]
     fn test_bad_string_only_decimal() {
         BigDecimal::from_str(".").unwrap();
     }
+
     #[test]
     #[should_panic(expected = "Empty")]
     fn test_bad_string_only_decimal_and_exponent() {
