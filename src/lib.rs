@@ -72,7 +72,7 @@ static SCALE: AtomicI64 = AtomicI64::new(100);
 #[macro_use]
 mod macros;
 
-#[cfg(feature = "sqlx")]
+#[cfg(feature = "sqlx_integration")]
 mod sqlx;
 
 #[inline(always)]

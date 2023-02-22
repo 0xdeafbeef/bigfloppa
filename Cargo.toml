@@ -1,6 +1,6 @@
 [package]
 name = "bigfloppa"
-version = "0.3.2"
+version = "0.3.4"
 authors = ["Andrew Kubera"]
 description = "Arbitrary precision decimal numbers"
 documentation = "https://docs.rs/bigfloppa"
@@ -18,7 +18,7 @@ serde = { version = "1.0", optional = true }
 
 bigdecimal = { version = "0.3.0", optional = true }
 bytes = { version = "1.4.0", optional = true }
-sqlx-core = { version = "0.6.2", features = ["runtime-tokio-rustls", "postgres", "bigdecimal"], optional = true }
+sqlx-core = { version = "0.6.2", features = ["postgres", "bigdecimal"], optional = true }
 schemars = { version = "0.8.11", optional = true }
 
 
@@ -28,7 +28,7 @@ serde_json = "1.0.93"
 bigdecimal = "0.3.0"
 
 [features]
-sqlx = ["sqlx-core", "bytes"]
+sqlx_integration = ["sqlx-core", "bytes","bigdecimal"]
 string-only = []
 schema = ["schemars"]
 
