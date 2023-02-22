@@ -2055,6 +2055,33 @@ mod bigdecimal_serde {
     }
 }
 
+#[cfg(feature = "schema")]
+mod schema {
+    use schemars::gen::SchemaGenerator;
+    use schemars::JsonSchema;
+    use schemars::schema::{InstanceType, Metadata, Schema, SchemaObject};
+
+    impl JsonSchema for super::BigDecimal {
+        fn schema_name() -> String {
+            "BigDecimal".to_string()
+        }
+
+        fn json_schema(gen: &mut SchemaGenerator) -> Schema {
+            SchemaObject {
+                instance_type: Some(InstanceType::String.into()),
+                format: Some("decimal".to_string()),
+                metadata: Some(Box::new(Metadata {
+                    description: Some("A decimal number".to_string()),
+                    examples: vec![serde_json::json!({"1.337"})],
+                    ..Default::default()
+                },
+                )),
+                ..Default::default()
+            }.into()
+        }
+    }
+}
+
 #[rustfmt::skip]
 #[cfg(test)]
 mod bigdecimal_tests {
