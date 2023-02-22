@@ -1,6 +1,6 @@
 [package]
 name = "bigfloppa"
-version = "0.3.1"
+version = "0.3.2"
 authors = ["Andrew Kubera"]
 description = "Arbitrary precision decimal numbers"
 documentation = "https://docs.rs/bigfloppa"
