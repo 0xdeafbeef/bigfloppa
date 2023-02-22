@@ -155,11 +155,28 @@ fn get_rounding_term(num: &BigInt) -> u8 {
 
 /// A big decimal type.
 ///
+
 #[derive(Clone, Eq)]
-pub struct BigDecimal {
-    int_val: BigInt,
-    // A positive scale means a negative power of 10
-    scale: i64,
+pub struct BigDecimal(pub bigdecimal::BigDecimal);
+
+impl From<BigDecimal> for bigdecimal::BigDecimal {
+    fn from(bd: BigDecimal) -> Self {
+        bd.0
+    }
+}
+
+impl From<bigdecimal::BigDecimal> for BigDecimal {
+    fn from(bd: bigdecimal::BigDecimal) -> Self {
+        BigDecimal(bd)
+    }
+}
+
+impl Div<BigDecimal> for BigDecimal {
+    type Output = BigDecimal;
+
+    fn div(self, den: BigDecimal) -> Self::Output {
+        todo!()
+    }
 }
 
 impl BigDecimal {
